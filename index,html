@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🦇 SISTEMA DE VIGILÂNCIA GOTHAM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0a0e14;
+            color: #00d9ff;
+            font-family: 'Courier New', monospace;
+            overflow-x: hidden;
+            min-height: 100vh;
+            padding: 5px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* Header Compacto */
+        .header {
+            text-align: center;
+            padding: 10px 0;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 217, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 217, 255, 0.1), transparent);
+            animation: scan 3s infinite;
+        }
+        
+        @keyframes scan {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .title {
+            font-size: 1.3rem;
+            letter-spacing: 2px;
+            margin-bottom: 3px;
+            text-shadow: 0 0 10px rgba(0, 217, 255, 0.5);
+            font-weight: bold;
+        }
+        
+        .subtitle {
+            color: #88ffff;
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        
+        /* Stats Grid Compacto */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .stat-box {
+            background: rgba(10, 20, 40, 0.8);
+            border: 1px solid #00d9ff;
+            border-radius: 4px;
+            padding: 8px 5px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-label {
+            color: #88ffff;
+            font-size: 0.6rem;
+            margin-bottom: 3px;
+            opacity: 0.8;
+        }
+        
+        .stat-value {
+            color: #00ff88;
+            font-size: 0.9rem;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Layout Principal - Câmeras em Destaque */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+            height: calc(100vh - 200px);
+            min-height: 500px;
+        }
+        
+        /* Área Principal de Câmeras */
+        .cameras-main {
+            background: rgba(5, 10, 20, 0.9);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: 5px;
+            padding: 10px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        .cameras-section-title {
+            color: #00d9ff;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            padding-left: 8px;
+            border-left: 2px solid #00d9ff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            flex-shrink: 0;
+        }
+        
+        .cameras-grid-container {
+            flex: 1;
+            overflow: auto;
+        }
+        
+        .cameras-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+        
+        /* Modal de Câmera em Tela Cheia */
+        .camera-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .camera-modal.active {
+            display: flex;
+            animation: modalFadeIn 0.3s ease-out;
+        }
+        
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            position: relative;
+            width: 90%;
+            height: 90%;
+            background: #0a0e14;
+            border: 3px solid #00d9ff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0, 217, 255, 0.3);
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 0, 64, 0.3);
+            color: #ff0040;
+            border: 1px solid #ff0040;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 1001;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        
+        .modal-close:hover {
+            background: rgba(255, 0, 64, 0.5);
+            transform: scale(1.1);
+        }
+        
+        .modal-camera-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .modal-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+            padding: 15px;
+            color: white;
+        }
+        
+        .modal-camera-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #00ff88;
+        }
+        
+        .modal-camera-info {
+            font-size: 0.9rem;
+            color: #88ffff;
+            margin-bottom: 10px;
+        }
+        
+        .modal-camera-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 0.8rem;
+        }
+        
+        .modal-stat {
+            background: rgba(0, 217, 255, 0.1);
+            padding: 5px 10px;
+            border-radius: 3px;
+            border: 1px solid rgba(0, 217, 255, 0.3);
+        }
+        
+        /* Efeito de zoom na câmera quando expandida */
+        .camera-zoomed {
+            transform: scale(0.95);
+            opacity: 0.7;
+            transition: all 0.3s;
+            pointer-events: none;
+        }
+        
+        /* Câmeras normais */
+        .camera-item {
+            position: relative;
+            aspect-ratio: 16/9;
+            overflow: hidden;
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .camera-item:hover {
+            transform: scale(1.02);
+            border-color: #00d9ff;
+            box-shadow: 0 0 15px rgba(0, 217, 255, 0.3);
+            z-index: 10;
+        }
+        
+        .camera-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(30%) contrast(1.1) brightness(0.9);
+            transition: filter 0.3s;
+        }
+        
+        .camera-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+            padding: 6px;
+            font-size: 0.6rem;
+        }
+        
+        .camera-name {
+            color: #fff;
+            font-weight: bold;
+            margin-bottom: 2px;
+            font-size: 0.65rem;
+        }
+        
+        .camera-status {
+            display: inline-block;
+            padding: 2px 5px;
+            border-radius: 2px;
+            font-size: 0.55rem;
+            font-weight: bold;
+        }
+        
+        .status-active {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            border: 1px solid #00ff88;
+        }
+        
+        .status-warning {
+            background: rgba(255, 170, 0, 0.2);
+            color: #ffaa00;
+            border: 1px solid #ffaa00;
+            animation: pulse 2s infinite;
+        }
+        
+        /* Efeitos dos Controles nas Câmeras */
+        .facial-analysis-active .camera-feed {
+            filter: contrast(1.4) saturate(1.6) brightness(0.95);
+            border: 2px solid #00ff88;
+        }
+        
+        .facial-analysis-active::after {
+            content: '🔍';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(0, 255, 136, 0.3);
+            color: #00ff88;
+            padding: 2px 5px;
+            font-size: 0.6rem;
+            border-radius: 3px;
+            animation: pulse 1s infinite;
+        }
+        
+        .thermal-vision-active .camera-feed {
+            filter: hue-rotate(180deg) brightness(1.2) contrast(1.5) saturate(1.8);
+            border: 2px solid #ff5500;
+        }
+        
+        .thermal-vision-active::after {
+            content: '🌡️';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(255, 85, 0, 0.3);
+            color: #ff5500;
+            padding: 2px 5px;
+            font-size: 0.6rem;
+            border-radius: 3px;
+        }
+        
+        .tracking-active {
+            animation: tracking-pulse 2s infinite;
+        }
+        
+        .tracking-active::after {
+            content: '📍';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(0, 150, 255, 0.3);
+            color: #0096ff;
+            padding: 2px 5px;
+            font-size: 0.6rem;
+            border-radius: 3px;
+        }
+        
+        .recording-active .camera-feed {
+            filter: sepia(0.5) contrast(1.3);
+            border: 2px solid #ff0040;
+        }
+        
+        .recording-active::after {
+            content: '🔴';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(255, 0, 64, 0.3);
+            color: #ff0040;
+            padding: 2px 5px;
+            font-size: 0.6rem;
+            border-radius: 3px;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        @keyframes tracking-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(0, 150, 255, 0.7); }
+            50% { box-shadow: 0 0 0 5px rgba(0, 150, 255, 0); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Painel Lateral */
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .controls-panel {
+            background: rgba(10, 20, 40, 0.8);
+            border: 1px solid #00d9ff;
+            border-radius: 5px;
+            padding: 10px;
+            flex: 1;
+        }
+        
+        .logs-panel {
+            background: rgba(10, 20, 40, 0.8);
+            border: 1px solid #00d9ff;
+            border-radius: 5px;
+            padding: 10px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .section-title {
+            color: #00d9ff;
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+            padding-left: 6px;
+            border-left: 2px solid #00d9ff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+        
+        /* Controles Compactos */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
+        
+        .control-btn {
+            background: rgba(0, 217, 255, 0.1);
+            border: 1px solid #00d9ff;
+            color: #00d9ff;
+            padding: 8px 4px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.65rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .control-btn:hover {
+            background: rgba(0, 217, 255, 0.2);
+            transform: translateY(-1px);
+        }
+        
+        .control-btn.active {
+            background: rgba(0, 217, 255, 0.3);
+            box-shadow: 0 0 8px rgba(0, 217, 255, 0.5);
+            border-color: #fff;
+        }
+        
+        .control-icon {
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+        
+        .control-status {
+            position: absolute;
+            top: 3px;
+            right: 3px;
+            font-size: 0.45rem;
+            padding: 1px 3px;
+            border-radius: 2px;
+        }
+        
+        .status-on {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            border: 1px solid #00ff88;
+        }
+        
+        .status-off {
+            background: rgba(255, 0, 64, 0.2);
+            color: #ff0040;
+            border: 1px solid #ff0040;
+        }
+        
+        /* Logs Compactos */
+        .logs-content {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 3px;
+            padding: 8px;
+            flex: 1;
+            overflow-y: auto;
+            font-size: 0.6rem;
+            line-height: 1.3;
+        }
+        
+        .log-entry {
+            margin-bottom: 4px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid rgba(0, 217, 255, 0.1);
+        }
+        
+        .log-time {
+            color: #00ff88;
+            font-size: 0.55rem;
+        }
+        
+        .log-message {
+            color: #e0e0ff;
+        }
+        
+        /* Informações dos Controles */
+        .controls-info {
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+            font-size: 0.6rem;
+            line-height: 1.3;
+        }
+        
+        .info-title {
+            color: #88ffff;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+        
+        .info-text {
+            color: #ccc;
+        }
+        
+        /* Static Effect */
+        .static-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.02;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(255, 255, 255, 0.1) 2px,
+                rgba(255, 255, 255, 0.1) 4px
+            );
+            animation: static 0.1s infinite;
+            z-index: 100;
+        }
+        
+        @keyframes static {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(4px); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-layout {
+                grid-template-columns: 2fr 1fr;
+            }
+            
+            .cameras-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .modal-content {
+                width: 95%;
+                height: 80%;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            
+            .cameras-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .title {
+                font-size: 1.1rem;
+            }
+            
+            .modal-content {
+                width: 100%;
+                height: 70%;
+                border-radius: 0;
+                border: 2px solid #00d9ff;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .cameras-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="static-overlay"></div>
+    
+    <!-- Modal de Câmera em Tela Cheia -->
+    <div class="camera-modal" id="cameraModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeCameraModal()">✕</button>
+            <img id="modalCameraFeed" class="modal-camera-feed" alt="Camera Feed Fullscreen">
+            <div class="modal-overlay">
+                <div class="modal-camera-name" id="modalCameraName">CAM-01: Main Street</div>
+                <div class="modal-camera-info" id="modalCameraInfo">Financial District • Resolution: 4K • FPS: 30</div>
+                <div class="modal-camera-stats">
+                    <div class="modal-stat">ZOOM: 4x</div>
+                    <div class="modal-stat">BRIGHTNESS: 85%</div>
+                    <div class="modal-stat">AUDIO: ON</div>
+                    <div class="modal-stat">RECORDING: YES</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- Header Compacto -->
+        <div class="header">
+            <div class="title">GOTHAM SURVEILLANCE</div>
+            <div class="subtitle">DOUBLE-CLICK CAMERA FOR FULLSCREEN • CLICK OUTSIDE TO EXIT</div>
+        </div>
+        
+        <!-- Stats Compactos -->
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-label">STATUS</div>
+                <div class="stat-value">ONLINE</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">ACTIVE CAMS</div>
+                <div class="stat-value" id="activeCams">12/12</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">FULLSCREEN</div>
+                <div class="stat-value" id="fullscreenCam" style="color: #ffaa00;">NONE</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">UPTIME</div>
+                <div class="stat-value" id="uptimeValue">24:15</div>
+            </div>
+        </div>
+        
+        <!-- Layout Principal - Câmeras em Destaque -->
+        <div class="main-layout">
+            <!-- Área Principal de Câmeras -->
+            <div class="cameras-main">
+                <div class="cameras-section-title" id="cameraSectionTitle">LIVE FEEDS - DOUBLE CLICK TO EXPAND</div>
+                <div class="cameras-grid-container">
+                    <div class="cameras-grid" id="mainCameraGrid">
+                        <!-- Câmeras serão carregadas aqui -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Painel Lateral -->
+            <div class="side-panel">
+                <!-- Controles -->
+                <div class="controls-panel">
+                    <div class="section-title">QUICK CONTROLS</div>
+                    <div class="controls-grid">
+                        <button class="control-btn" id="btnFacial" onclick="toggleFacialAnalysis()">
+                            <div class="control-icon">👁️</div>
+                            <div>FACIAL ID</div>
+                            <div class="control-status status-off">OFF</div>
+                        </button>
+                        <button class="control-btn" id="btnThermal" onclick="toggleThermalVision()">
+                            <div class="control-icon">🔥</div>
+                            <div>THERMAL</div>
+                            <div class="control-status status-off">OFF</div>
+                        </button>
+                        <button class="control-btn" id="btnTracking" onclick="toggleVehicleTracking()">
+                            <div class="control-icon">🚗</div>
+                            <div>TRACKING</div>
+                            <div class="control-status status-off">OFF</div>
+                        </button>
+                        <button class="control-btn" id="btnRecording" onclick="toggleRecording()">
+                            <div class="control-icon">🎥</div>
+                            <div>RECORD</div>
+                            <div class="control-status status-off">OFF</div>
+                        </button>
+                    </div>
+                    
+                    <div class="controls-info">
+                        <div class="info-title">INSTRUCTIONS:</div>
+                        <div class="info-text">
+                            • SINGLE CLICK: Camera info<br>
+                            • DOUBLE CLICK: Fullscreen mode<br>
+                            • CLICK OUTSIDE: Exit fullscreen<br>
+                            • ESC KEY: Also exits fullscreen
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Logs -->
+                <div class="logs-panel">
+                    <div class="section-title">SYSTEM LOGS</div>
+                    <div class="logs-content" id="systemLogs">
+                        <!-- Logs serão carregados aqui -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Sistema de estado dos controles
+        const systemControls = {
+            facialAnalysis: false,
+            thermalVision: false,
+            vehicleTracking: false,
+            recording: false
+        };
+        
+        let currentFullscreenCamera = null;
+        let clickTimer = null;
+        let clickCount = 0;
+        
+        // Camera data
+        const cameraData = [
+            { id: 1, name: "CAM-01: Main Street", location: "Financial District", status: "active", isTracked: false, 
+              resolution: "4K", fps: 30, zoom: "4x", brightness: "85%" },
+            { id: 2, name: "CAM-02: Bank Entrance", location: "Sector A", status: "active", isTracked: false,
+              resolution: "2K", fps: 60, zoom: "2x", brightness: "90%" },
+            { id: 3, name: "CAM-03: Central Station", location: "North Terminal", status: "warning", isTracked: false,
+              resolution: "4K", fps: 30, zoom: "8x", brightness: "75%" },
+            { id: 4, name: "CAM-04: Dark Alley", location: "Industrial Zone", status: "warning", isTracked: false,
+              resolution: "1080p", fps: 25, zoom: "1x", brightness: "95%" },
+            { id: 5, name: "CAM-05: Gotham Bridge", location: "East River", status: "active", isTracked: false,
+              resolution: "4K", fps: 30, zoom: "6x", brightness: "80%" },
+            { id: 6, name: "CAM-06: Wayne Manor", location: "Uptown", status: "active", isTracked: false,
+              resolution: "8K", fps: 60, zoom: "12x", brightness: "70%" },
+            { id: 7, name: "CAM-07: Docks", location: "South Port", status: "active", isTracked: false,
+              resolution: "2K", fps: 30, zoom: "3x", brightness: "88%" },
+            { id: 8, name: "CAM-08: City Hall", location: "Civic Center", status: "active", isTracked: false,
+              resolution: "4K", fps: 60, zoom: "5x", brightness: "82%" },
+            { id: 9, name: "CAM-09: Police HQ", location: "Downtown", status: "active", isTracked: false,
+              resolution: "1080p", fps: 30, zoom: "2x", brightness: "90%" },
+            { id: 10, name: "CAM-10: Arkham Gate", location: "North Island", status: "warning", isTracked: false,
+              resolution: "4K", fps: 25, zoom: "10x", brightness: "65%" },
+            { id: 11, name: "CAM-11: Iceberg Lounge", location: "Entertainment", status: "active", isTracked: false,
+              resolution: "2K", fps: 60, zoom: "4x", brightness: "85%" },
+            { id: 12, name: "CAM-12: Clock Tower", location: "Old City", status: "active", isTracked: false,
+              resolution: "4K", fps: 30, zoom: "3x", brightness: "78%" },
+        ];
+        
+        // System logs
+        const systemLogs = [
+            { time: "23:45:01", message: "System online. All units operational." },
+            { time: "23:47:23", message: "Motion detected: CAM-03." },
+            { time: "23:50:15", message: "Criminal database loaded." },
+            { time: "23:55:42", message: "Suspicious vehicle: Sector B." },
+            { time: "00:01:18", message: "Satellite link established." },
+            { time: "00:05:33", message: "Double-click camera for fullscreen view." },
+            { time: "00:10:57", message: "Security protocols active." }
+        ];
+        
+        // Initialize system
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCameras();
+            loadLogs();
+            startLiveUpdates();
+            updateStats();
+            startUptimeCounter();
+            
+            // Configurar listener para fechar modal ao clicar fora
+            document.getElementById('cameraModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeCameraModal();
+                }
+            });
+            
+            // Configurar listener para tecla ESC
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeCameraModal();
+                }
+            });
+        });
+        
+        // Load cameras into grid
+        function loadCameras() {
+            const grid = document.getElementById('mainCameraGrid');
+            grid.innerHTML = '';
+            
+            cameraData.forEach(camera => {
+                const cameraItem = document.createElement('div');
+                cameraItem.className = 'camera-item';
+                cameraItem.id = `camera-${camera.id}`;
+                cameraItem.dataset.cameraId = camera.id;
+                
+                // Imagens de câmera de segurança urbanas
+                const imageUrls = [
+                    'https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=800&h=450&fit=crop',
+                    'https://images.unsplash.com/photo-1542744095-fcf48d80b0fd?w=800&h=450&fit=crop',
+                    'https://images.unsplash.com/photo-1532978379173-523e6a4a115e?w=800&h=450&fit=crop',
+                    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=450&fit=crop',
+                    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&h=450&fit=crop',
+                    'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&h=450&fit=crop',
+                    'https://images.unsplash.com/photo-1487956382158-bb926046304a?w=800&h=450&fit=crop',
+                    'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=450&fit=crop',
+                    'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800&h=450&fit=crop',
+                    'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=450&fit=crop',
+                    'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&h=450&fit=crop',
+                    'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800&h=450&fit=crop'
+                ];
+                
+                const imgIndex = (camera.id - 1) % imageUrls.length;
+                const cameraImage = imageUrls[imgIndex];
+                
+                cameraItem.innerHTML = `
+                    <img src="${cameraImage}" class="camera-feed" alt="Camera Feed">
+                    <div class="camera-overlay">
+                        <div class="camera-name">${camera.name.split(':')[0]}</div>
+                        <div class="camera-status ${camera.status === 'active' ? 'status-active' : 'status-warning'}">
+                            ${camera.status === 'active' ? 'ACTIVE' : 'ALERT'}
+                        </div>
+                    </div>
+                `;
+                
+                // Configurar detecção de duplo clique
+                cameraItem.addEventListener('click', handleCameraClick);
+                
+                grid.appendChild(cameraItem);
+                updateCameraEffects(cameraItem, camera.id);
+            });
+        }
+        
+        // Manipulador de clique na câmera
+        function handleCameraClick(e) {
+            const cameraId = parseInt(e.currentTarget.dataset.cameraId);
+            const camera = cameraData.find(c => c.id === cameraId);
+            
+            clickCount++;
+            
+            if (clickCount === 1) {
+                clickTimer = setTimeout(function() {
+                    // Clique único
+                    if (systemControls.vehicleTracking) {
+                        toggleCameraTracking(cameraId);
+                    } else {
+                        showCameraDetails(camera);
+                    }
+                    clickCount = 0;
+                }, 300);
+            } else if (clickCount === 2) {
+                // Duplo clique - abrir em tela cheia
+                clearTimeout(clickTimer);
+                openCameraFullscreen(camera);
+                clickCount = 0;
+            }
+        }
+        
+        // Abrir câmera em tela cheia
+        function openCameraFullscreen(camera) {
+            if (!camera) return;
+            
+            currentFullscreenCamera = camera.id;
+            
+            // Atualizar modal com dados da câmera
+            document.getElementById('modalCameraName').textContent = camera.name;
+            document.getElementById('modalCameraInfo').textContent = 
+                `${camera.location} • Resolution: ${camera.resolution} • FPS: ${camera.fps}`;
+            
+            // Usar a mesma imagem mas em resolução maior
+            const imageUrls = [
+                'https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=1200&h=675&fit=crop',
+                'https://images.unsplash.com/photo-1542744095-fcf48d80b0fd?w=1200&h=675&fit=crop',
+                'https://images.unsplash.com/photo-1532978379173-523e6a4a115e?w=1200&h=675&fit=crop',
+                'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200&h=675&fit=crop',
+                'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&h=675&fit=crop',
+                'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&h=675&fit=crop',
+                'https://images.unsplash.com/photo-1487956382158-bb926046304a?w=1200&h=675&fit=crop',
+                'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1200&h=675&fit=crop',
+                'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1200&h=675&fit=crop',
+                'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1200&h=675&fit=crop',
+                'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=1200&h=675&fit=crop',
+                'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1200&h=675&fit=crop'
+            ];
+            
+            const imgIndex = (camera.id - 1) % imageUrls.length;
+            document.getElementById('modalCameraFeed').src = imageUrls[imgIndex];
+            
+            // Atualizar estatísticas no modal
+            document.querySelectorAll('.modal-camera-stats .modal-stat')[0].textContent = `ZOOM: ${camera.zoom}`;
+            document.querySelectorAll('.modal-camera-stats .modal-stat')[1].textContent = `BRIGHTNESS: ${camera.brightness}`;
+            document.querySelectorAll('.modal-camera-stats .modal-stat')[2].textContent = `AUDIO: ${camera.status === 'active' ? 'ON' : 'OFF'}`;
+            document.querySelectorAll('.modal-camera-stats .modal-stat')[3].textContent = `RECORDING: ${systemControls.recording ? 'YES' : 'NO'}`;
+            
+            // Mostrar modal
+            document.getElementById('cameraModal').classList.add('active');
+            
+            // Atualizar estatística
+            document.getElementById('fullscreenCam').innerHTML = 
+                `<span style="color:#00ff88">${camera.name.split(':')[0]}</span>`;
+            
+            // Adicionar efeito nas outras câmeras
+            cameraData.forEach(c => {
+                if (c.id !== camera.id) {
+                    const cameraElement = document.getElementById(`camera-${c.id}`);
+                    if (cameraElement) {
+                        cameraElement.classList.add('camera-zoomed');
+                    }
+                }
+            });
+            
+            // Adicionar log
+            addLog(`Fullscreen: ${camera.name} - Zoom: ${camera.zoom}`);
+        }
+        
+        // Fechar modal de câmera
+        function closeCameraModal() {
+            if (!currentFullscreenCamera) return;
+            
+            document.getElementById('cameraModal').classList.remove('active');
+            
+            // Remover efeito das outras câmeras
+            cameraData.forEach(c => {
+                const cameraElement = document.getElementById(`camera-${c.id}`);
+                if (cameraElement) {
+                    cameraElement.classList.remove('camera-zoomed');
+                }
+            });
+            
+            const camera = cameraData.find(c => c.id === currentFullscreenCamera);
+            addLog(`Exited fullscreen: ${camera.name}`);
+            
+            // Atualizar estatística
+            document.getElementById('fullscreenCam').innerHTML = 
+                `<span style="color:#ffaa00">NONE</span>`;
+            
+            currentFullscreenCamera = null;
+        }
+        
+        // Mostrar detalhes da câmera (clique único)
+        function showCameraDetails(camera) {
+            const alertCount = camera.status === 'warning' ? 1 : 0;
+            document.getElementById('alertCount').innerHTML = 
+                `<span style="color:#ff0040">${alertCount}</span>`;
+            
+            addLog(`Selected: ${camera.name} - ${camera.location}`);
+        }
+        
+        // Atualizar efeitos nas câmeras
+        function updateCameraEffects(cameraItem, cameraId) {
+            cameraItem.classList.remove('facial-analysis-active', 'thermal-vision-active', 'tracking-active', 'recording-active');
+            
+            if (systemControls.facialAnalysis) {
+                cameraItem.classList.add('facial-analysis-active');
+            }
+            
+            if (systemControls.thermalVision) {
+                cameraItem.classList.add('thermal-vision-active');
+            }
+            
+            const camera = cameraData.find(c => c.id === cameraId);
+            if (systemControls.vehicleTracking && camera && camera.isTracked) {
+                cameraItem.classList.add('tracking-active');
+            }
+            
+            if (systemControls.recording) {
+                cameraItem.classList.add('recording-active');
+            }
+        }
+        
+        // Toggle análise facial
+        function toggleFacialAnalysis() {
+            systemControls.facialAnalysis = !systemControls.facialAnalysis;
+            const btn = document.getElementById('btnFacial');
+            const status = btn.querySelector('.control-status');
+            
+            if (systemControls.facialAnalysis) {
+                btn.classList.add('active');
+                status.textContent = 'ON';
+                status.className = 'control-status status-on';
+                addLog('Facial analysis: ACTIVATED');
+            } else {
+                btn.classList.remove('active');
+                status.textContent = 'OFF';
+                status.className = 'control-status status-off';
+                addLog('Facial analysis: DEACTIVATED');
+            }
+            
+            updateAllCameraEffects();
+        }
+        
+        // Toggle visão térmica
+        function toggleThermalVision() {
+            systemControls.thermalVision = !systemControls.thermalVision;
+            const btn = document.getElementById('btnThermal');
+            const status = btn.querySelector('.control-status');
+            
+            if (systemControls.thermalVision) {
+                btn.classList.add('active');
+                status.textContent = 'ON';
+                status.className = 'control-status status-on';
+                addLog('Thermal vision: ACTIVATED');
+                document.getElementById('cameraSectionTitle').textContent = 'THERMAL VISION - HEAT SIGNATURES';
+            } else {
+                btn.classList.remove('active');
+                status.textContent = 'OFF';
+                status.className = 'control-status status-off';
+                addLog('Thermal vision: DEACTIVATED');
+                document.getElementById('cameraSectionTitle').textContent = 'LIVE FEEDS - DOUBLE CLICK TO EXPAND';
+            }
+            
+            updateAllCameraEffects();
+        }
+        
+        // Toggle rastreamento veicular
+        function toggleVehicleTracking() {
+            systemControls.vehicleTracking = !systemControls.vehicleTracking;
+            const btn = document.getElementById('btnTracking');
+            const status = btn.querySelector('.control-status');
+            
+            if (systemControls.vehicleTracking) {
+                btn.classList.add('active');
+                status.textContent = 'ON';
+                status.className = 'control-status status-on';
+                addLog('Vehicle tracking: ENABLED - Click cameras to track');
+                document.getElementById('cameraSectionTitle').textContent = 'TRACKING MODE - SELECT TARGET';
+            } else {
+                btn.classList.remove('active');
+                status.textContent = 'OFF';
+                status.className = 'control-status status-off';
+                addLog('Vehicle tracking: DISABLED');
+                document.getElementById('cameraSectionTitle').textContent = 'LIVE FEEDS - DOUBLE CLICK TO EXPAND';
+                
+                cameraData.forEach(camera => {
+                    camera.isTracked = false;
+                });
+            }
+            
+            updateAllCameraEffects();
+        }
+        
+        // Alternar rastreamento de câmera específica
+        function toggleCameraTracking(cameraId) {
+            if (!systemControls.vehicleTracking) return;
+            
+            const camera = cameraData.find(c => c.id === cameraId);
+            if (camera) {
+                camera.isTracked = !camera.isTracked;
+                const cameraItem = document.getElementById(`camera-${cameraId}`);
+                if (cameraItem) updateCameraEffects(cameraItem, cameraId);
+                
+                if (camera.isTracked) {
+                    addLog(`Tracking: ${camera.name}`);
+                } else {
+                    addLog(`Tracking stopped: ${camera.name}`);
+                }
+            }
+        }
+        
+        // Toggle gravação
+        function toggleRecording() {
+            systemControls.recording = !systemControls.recording;
+            const btn = document.getElementById('btnRecording');
+            const status = btn.querySelector('.control-status');
+            
+            if (systemControls.recording) {
+                btn.classList.add('active');
+                status.textContent = 'ON';
+                status.className = 'control-status status-on';
+                addLog('Continuous recording: STARTED');
+            } else {
+                btn.classList.remove('active');
+                status.textContent = 'OFF';
+                status.className = 'control-status status-off';
+                addLog('Continuous recording: STOPPED');
+            }
+            
+            updateAllCameraEffects();
+        }
+        
+        // Atualizar todas as câmeras
+        function updateAllCameraEffects() {
+            cameraData.forEach(camera => {
+                const cameraItem = document.getElementById(`camera-${camera.id}`);
+                if (cameraItem) updateCameraEffects(cameraItem, camera.id);
+            });
+        }
+        
+        // Atualizar estatísticas
+        function updateStats() {
+            const activeCams = cameraData.filter(c => c.status === 'active').length;
+            const totalCams = cameraData.length;
+            document.getElementById('activeCams').textContent = `${activeCams}/${totalCams}`;
+            
+            const alertCams = cameraData.filter(c => c.status === 'warning').length;
+            document.getElementById('alertCount').innerHTML = 
+                `<span style="color:#ff0040">${alertCms}</span>`;
+        }
+        
+        // Contador de uptime
+        function startUptimeCounter() {
+            let hours = 24;
+            let minutes = 15;
+            
+            setInterval(() => {
+                minutes++;
+                if (minutes >= 60) {
+                    hours++;
+                    minutes = 0;
+                }
+                document.getElementById('uptimeValue').textContent = 
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            }, 60000);
+        }
+        
+        // Load system logs
+        function loadLogs() {
+            const logsContainer = document.getElementById('systemLogs');
+            logsContainer.innerHTML = '';
+            
+            systemLogs.forEach(log => {
+                const logEntry = document.createElement('div');
+                logEntry.className = 'log-entry';
+                logEntry.innerHTML = `
+                    <span class="log-time">${log.time}</span> 
+                    <span class="log-message">${log.message}</span>
+                `;
+                logsContainer.appendChild(logEntry);
+            });
+            
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+        
+        // Add new log
+        function addLog(message) {
+            const logsContainer = document.getElementById('systemLogs');
+            const now = new Date();
+            const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                             now.getMinutes().toString().padStart(2, '0') + ':' + 
+                             now.getSeconds().toString().padStart(2, '0');
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `
+                <span class="log-time">${timeString}</span> 
+                <span class="log-message">${message}</span>
+            `;
+            
+            logsContainer.appendChild(logEntry);
+            
+            if (logsContainer.children.length > 8) {
+                logsContainer.removeChild(logsContainer.firstChild);
+            }
+            
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+        
+        // Simulate live updates
+        function startLiveUpdates() {
+            setInterval(() => {
+                const now = new Date();
+                const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                                 now.getMinutes().toString().padStart(2, '0');
+                
+                document.querySelector('.title').textContent = `GOTHAM SURVEILLANCE • ${timeString}`;
+            }, 1000);
+            
+            setInterval(() => {
+                if (Math.random() > 0.7 && !currentFullscreenCamera) {
+                    const randomIndex = Math.floor(Math.random() * cameraData.length);
+                    cameraData[randomIndex].status = cameraData[randomIndex].status === 'active' ? 'warning' : 'active';
+                    loadCameras();
+                    updateStats();
+                    
+                    const camera = cameraData[randomIndex];
+                    addLog(`Status change: ${camera.name} - ${camera.status === 'active' ? 'Normal' : 'Alert'}`);
+                }
+                
+                if (Math.random() > 0.8) {
+                    const messages = [
+                        "Network scan: No threats detected",
+                        "Satellite sync: Complete",
+                        "Database update: In progress",
+                        "Traffic monitoring: Active",
+                        "Auto-backup: Successful"
+                    ];
+                    
+                    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+                    addLog(randomMessage);
+                }
+            }, 8000);
+        }
+    </script>
+</body>
+</html>
